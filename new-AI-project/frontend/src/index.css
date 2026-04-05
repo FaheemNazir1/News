@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#F4F5F7] text-gray-900 font-sans antialiased;
+    margin: 0;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden;
+  }
+  .glass-card-dark {
+    @apply bg-forensic-dark rounded-2xl shadow-lg border border-forensic-blue text-white overflow-hidden;
+  }
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
