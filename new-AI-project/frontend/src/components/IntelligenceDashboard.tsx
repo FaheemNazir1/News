@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Upload, Scan } from 'lucide-react';
+import { Scan } from 'lucide-react';
 
 interface Props {
   onAnalyze: (url: string) => void;
@@ -117,11 +117,6 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
             <span>{isLoading ? 'Scanning...' : 'Analyze'}</span>
          </button>
       </div>
-
-      <button className="w-full flex items-center justify-center space-x-2 text-gray-600 font-semibold text-sm hover:text-gray-900 transition-colors py-2 mb-8">
-         <Upload className="w-4 h-4" />
-         <span>Upload PDF</span>
-      </button>
 
       {/* Analysis Results */}
       {analyzed && (

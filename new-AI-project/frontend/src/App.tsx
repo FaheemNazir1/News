@@ -11,7 +11,7 @@ import './index.css';
 function App() {
   const [user, setUser] = useState<any>(null);
   const [showAuth, setShowAuth] = useState(false);
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentTab, setCurrentTab] = useState('live');
   const [loading, setLoading] = useState(false);
   const [lastAnalyzedUrl, setLastAnalyzedUrl] = useState<string>('');
   const [verifyResult, setVerifyResult] = useState<any>(null);
@@ -37,7 +37,7 @@ function App() {
   const handleLogout = () => {
     authService.logout();
     setUser(null);
-    setCurrentTab('dashboard');
+    setCurrentTab('live');
   };
 
   const handleAnalyze = async (url: string) => {

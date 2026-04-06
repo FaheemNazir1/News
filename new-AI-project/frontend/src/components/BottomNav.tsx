@@ -8,8 +8,8 @@ interface BottomNavProps {
 
 const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange }) => {
   const tabs = [
-    { id: 'dashboard', label: 'VERIFY', icon: LayoutDashboard },
-    { id: 'live', label: 'LIVE', icon: Newspaper },
+    { id: 'live', label: 'NEWS', icon: Newspaper },
+    { id: 'dashboard', label: 'ANALYSIS', icon: LayoutDashboard },
     { id: 'profile', label: 'PROFILE', icon: User },
   ];
 
