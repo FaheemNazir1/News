@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Article } from '../types';
 import FakeNewsBadge from './FakeNewsBadge';
 import { articleService } from '../services/api';
+import { Bookmark, BookmarkCheck, Share2 } from 'lucide-react';
 
 interface ArticleCardProps {
   article: Article;
@@ -17,6 +18,29 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
     summary: string[];
   } | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle');
+
+  const storageKey = 'saved_articles_v1';
+
+  const loadSavedMap = () => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return {} as Record<string, any>;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : ({} as Record<string, any>);
+    } catch {
+      return {} as Record<string, any>;
+    }
+  };
+
+  const writeSavedMap = (map: Record<string, any>) => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(map));
+    } catch {
+      // ignore
+    }
+  };
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
@@ -104,12 +128,68 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
   }, [article.content, suspiciousTerms]);
 
   useEffect(() => {
+    try {
+      const map = loadSavedMap();
+      const key = (article.url || '').toString();
+      setIsSaved(!!(key && map[key]));
+    } catch {
+      setIsSaved(false);
+    }
     return () => {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
     };
-  }, []);
+  }, [article.url]);
+
+  const handleToggleSave = () => {
+    const url = (article.url || '').toString();
+    if (!url) return;
+    const map = loadSavedMap();
+    if (map[url]) {
+      delete map[url];
+      writeSavedMap(map);
+      setIsSaved(false);
+      return;
+    }
+
+    map[url] = {
+      url,
+      title: article.title,
+      source: article.source,
+      publishDate: article.publishDate || article.publishedAt || '',
+      savedAt: new Date().toISOString()
+    };
+    writeSavedMap(map);
+    setIsSaved(true);
+  };
+
+  const handleShare = async () => {
+    const url = (article.url || '').toString();
+    if (!url) return;
+    const title = (article.title || '').toString();
+
+    try {
+      if (typeof navigator !== 'undefined' && 'share' in navigator) {
+        // @ts-ignore
+        await navigator.share({ title, url });
+        return;
+      }
+    } catch {
+      // fall back to clipboard
+    }
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setShareStatus('copied');
+        setTimeout(() => setShareStatus('idle'), 1200);
+        return;
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const handleSpeakSummary = () => {
     if (!aiSummary?.summary?.length) return;
@@ -206,9 +286,27 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
             </span>
           ) : null}
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getSentimentColor(article.sentiment)}`}>
-          {article.sentiment}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleSave}
+            className="p-2 rounded-lg bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors"
+            title={isSaved ? 'Saved' : 'Save'}
+          >
+            {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="p-2 rounded-lg bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors"
+            title={shareStatus === 'copied' ? 'Copied' : 'Share'}
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getSentimentColor(article.sentiment)}`}>
+            {article.sentiment}
+          </span>
+        </div>
       </div>
       
       <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2">

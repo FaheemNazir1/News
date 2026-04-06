@@ -3,6 +3,7 @@ import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
 import IntelligenceDashboard from './components/IntelligenceDashboard';
 import LiveNewsPage from './components/LiveNewsPage';
+import SavedPage from './components/SavedPage';
 import BottomNav from './components/BottomNav';
 import { authService } from './services/authService';
 import { articleService } from './services/api';
@@ -91,6 +92,7 @@ function App() {
         />
       )}
       {currentTab === 'live' && <LiveNewsPage />}
+      {currentTab === 'saved' && <SavedPage />}
       {currentTab === 'profile' && (
          <div className="p-6 sm:p-8 mt-6">
            <div className="flex items-start justify-between mb-6">

@@ -169,10 +169,10 @@ const credibilityLevelFromHostname = (hostname) => {
   const h = (hostname || '').toLowerCase();
   if (!h) return 'Unknown';
 
-  const trusted = ['bbc.', 'reuters.', 'apnews.', 'theguardian.', 'nytimes.', 'aljazeera.', 'washingtonpost.', 'wsj.', 'bloomberg.', 'ft.com', 'economist.'];
+  const trusted = ['bbc.', 'reuters.', 'apnews.', 'theguardian.', 'nytimes.', 'aljazeera.', 'washingtonpost.', 'wsj.', 'bloomberg.', 'ft.com', 'economist.', 'indiatimes', 'timesofindia', 'ndtv', 'thehindu', 'hindustantimes'];
   if (trusted.some((t) => h.includes(t))) return 'Trusted';
 
-  const medium = ['indiatimes', 'timesofindia', 'ndtv', 'dawn', 'geo', 'arynews', 'thehindu', 'hindustantimes', 'tribune', 'cnn', 'cnbc', 'fox', 'nbc', 'abcnews'];
+  const medium = ['dawn', 'geo', 'arynews', 'tribune', 'cnn', 'cnbc', 'fox', 'nbc', 'abcnews'];
   if (medium.some((m) => h.includes(m))) return 'Medium';
 
   return 'Unknown';

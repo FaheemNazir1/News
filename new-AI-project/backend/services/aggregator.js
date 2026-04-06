@@ -26,13 +26,22 @@ const getCredibilityLevel = (article) => {
     'wsj.',
     'bloomberg.',
     'ft.com',
-    'economist.'
+    'economist.',
+    'indiatimes',
+    'timesofindia',
+    'ndtv',
+    'thehindu',
+    'hindustantimes'
   ];
 
-  const isTrusted = trusted.some((t) => hostname.includes(t)) || ['bbc', 'reuters', 'associated press', 'ap', 'the new york times', 'al jazeera'].some((s) => source.includes(s));
+  const isTrusted =
+    trusted.some((t) => hostname.includes(t)) ||
+    ['bbc', 'reuters', 'associated press', 'ap', 'the new york times', 'al jazeera', 'times of india', 'indiatimes', 'ndtv', 'the hindu', 'hindustan times'].some((s) =>
+      source.includes(s)
+    );
   if (isTrusted) return 'Trusted';
 
-  const medium = ['indiatimes', 'timesofindia', 'ndtv', 'dawn', 'geo', 'arynews', 'thehindu', 'hindustantimes', 'tribune', 'cnn', 'cnbc', 'fox', 'nbc', 'abcnews'];
+  const medium = ['dawn', 'geo', 'arynews', 'tribune', 'cnn', 'cnbc', 'fox', 'nbc', 'abcnews'];
   const isMedium = medium.some((m) => hostname.includes(m)) || medium.some((m) => source.includes(m));
   if (isMedium) return 'Medium';
 
