@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Upload, ShieldAlert, Globe, ServerCrash, Scan, BarChart2, Hash, FileSpreadsheet, AlertTriangle, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { Upload, Scan } from 'lucide-react';
 
 interface Props {
   onAnalyze: (url: string) => void;
@@ -88,16 +88,6 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
   const sourceAuthority = typeof verifyResult?.sourceAuthority === 'number' ? `${verifyResult.sourceAuthority}%` : (isBbc ? '90%' : '28%');
   const factColor = trustScore >= 80 ? 'text-green-600' : trustScore >= 60 ? 'text-blue-600' : 'text-red-600';
   const sourceColor = trustScore >= 80 ? 'text-green-600' : trustScore >= 60 ? 'text-blue-600' : 'text-red-600';
-  const domainBadgeText = isBbc ? 'Reputable Domain' : 'Suspicious Domain';
-  const domainBadgeClass = isBbc
-    ? 'bg-green-100 text-green-800'
-    : 'bg-blue-100 text-blue-800';
-  const domainRepBorder = isBbc ? 'border-l-green-400' : 'border-l-red-500';
-  const domainRepText = effectiveHostname
-    ? (isBbc
-        ? `The source "${effectiveHostname}" is widely regarded as a reputable news provider.`
-        : `The source "${effectiveHostname}" may have limited transparency or inconsistent credibility signals.`)
-    : 'The source domain could not be extracted from the provided link.';
 
   const handleAnalyze = () => {
     if (url) {
@@ -269,150 +259,6 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
                <div className="w-full text-xs text-gray-500 text-center font-medium">
                 Results are shown for demonstration.
               </div>
-            </div>
-
-            {/* Network Origin */}
-            <div>
-               <div className="flex items-center justify-between mb-4 mt-8 px-1">
-                  <div className="flex items-center space-x-2">
-                     <Globe className="w-5 h-5 text-gray-800" />
-                     <h3 className="font-bold text-gray-900">Network Origin</h3>
-                  </div>
-                  <span className={`${domainBadgeClass} text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider`}>{domainBadgeText}</span>
-               </div>
-               
-               <div className="space-y-3">
-                  <div className={`bg-white p-4 rounded-xl border border-gray-200 border-l-4 ${domainRepBorder} shadow-sm relative`}>
-                     <h4 className="font-bold text-gray-800 text-sm mb-1">Domain Reputation</h4>
-                     <p className="text-xs text-gray-500 leading-relaxed">{domainRepText}</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-gray-200 border-l-4 border-l-green-400 shadow-sm relative">
-                     <h4 className="font-bold text-gray-800 text-sm mb-1">WHOIS Transparency</h4>
-                     <p className="text-xs text-gray-500 leading-relaxed">
-                       {isBbc
-                         ? 'Domain registration information appears consistent with an established publisher.'
-                         : 'Domain registration details may be limited or masked, which can reduce transparency.'}
-                     </p>
-                  </div>
-               </div>
-            </div>
-
-            {/* Linguistic Fingerprinting */}
-            <div>
-               <div className="flex items-center mb-4 mt-8 px-1">
-                  <div className="flex items-center space-x-2">
-                     <FileSpreadsheet className="w-5 h-5 text-gray-800" />
-                     <h3 className="font-bold text-gray-900">Linguistic Fingerprinting</h3>
-                  </div>
-               </div>
-
-               <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white p-4 rounded-xl border border-gray-200 border-l-4 border-l-red-500 shadow-sm">
-                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Emotional Loading</div>
-                     <div className="text-xl font-extrabold text-gray-900 mb-2">High</div>
-                     <p className="text-[10px] text-red-600 font-medium leading-tight">Sensationalist adjectives detected: "outrageous", "terrifying", "secret".</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-gray-200 border-l-4 border-l-green-400 shadow-sm">
-                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Clickbait Score</div>
-                     <div className="text-xl font-extrabold text-gray-900 mb-2">82%</div>
-                     <p className="text-[10px] text-gray-500 font-medium leading-tight">Headline matches classic psychological trigger patterns.</p>
-                  </div>
-               </div>
-            </div>
-
-            {/* Ideological Bias */}
-            <div>
-               <div className="flex items-center mb-4 mt-8 px-1">
-                  <div className="flex items-center space-x-2">
-                     <BarChart2 className="w-5 h-5 text-gray-800" />
-                     <h3 className="font-bold text-gray-900">Ideological Bias</h3>
-                  </div>
-               </div>
-
-               <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                  <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
-                     <span>Left</span>
-                     <span>Right</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full overflow-hidden flex bg-gray-200 relative mb-4">
-                     <div className="w-1/3 h-full bg-blue-500"></div>
-                     <div className="w-1/6 h-full bg-white"></div>
-                     <div className="w-1/2 h-full bg-red-400"></div>
-                     <div className="absolute left-[70%] border-l-2 border-forensic-dark h-3 -mt-0.5"></div>
-                  </div>
-                  <p className="text-xs text-gray-500 text-center font-medium mb-6">Heavy right-leaning slant detected in source citation.</p>
-
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 mt-4 w-full">Topic Heatmap</div>
-                  <div className="grid grid-cols-3 gap-2 placeholder-heatmap">
-                     <div className="aspect-square bg-red-200 rounded flex items-center justify-center text-red-700 opacity-60 hover:opacity-100 transition"><Hash className="w-5 h-5"/></div>
-                     <div className="aspect-square bg-red-400 rounded flex items-center justify-center text-red-900 opacity-80 hover:opacity-100 transition"><ShieldAlert className="w-5 h-5"/></div>
-                     <div className="aspect-square bg-red-100 rounded flex items-center justify-center text-red-700 opacity-60 hover:opacity-100 transition"><Globe className="w-5 h-5"/></div>
-                     <div className="aspect-square bg-red-500 rounded flex items-center justify-center text-white opacity-90 transition"><ServerCrash className="w-5 h-5"/></div>
-                     <div className="aspect-square bg-red-300 rounded flex items-center justify-center text-red-800 opacity-70 transition"><BarChart2 className="w-5 h-5"/></div>
-                     <div className="aspect-square bg-red-400 rounded flex items-center justify-center text-red-900 opacity-80 transition"><Scan className="w-5 h-5"/></div>
-                  </div>
-               </div>
-            </div>
-
-            {/* Cross-Referenced Evidence */}
-            <div className="mt-10">
-               <div className="flex items-center justify-between mb-4 px-1">
-                  <h3 className="font-bold text-gray-900 text-lg leading-tight w-1/2">Cross-Referenced Evidence</h3>
-                  <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest text-right w-1/2 align-bottom mt-1">
-                     2 Supporting • 8 Conflicting
-                  </div>
-               </div>
-
-               <div className="space-y-4">
-                  {/* Item 1 */}
-                  <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                     <div className="flex justify-between items-start mb-3">
-                        <div className="w-8 h-8 rounded bg-green-100 flex items-center justify-center text-green-700">
-                           <CheckCircle2 className="w-4 h-4" />
-                        </div>
-                        <span className="bg-green-100 text-green-800 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">Confirmed Fact</span>
-                     </div>
-                     <h4 className="font-bold text-gray-900 text-sm mb-2">Independent audit confirms the reported spending figures are inaccurate.</h4>
-                     <p className="text-xs text-gray-500 mb-3">Source: Associated Press, Reuters</p>
-                     <div className="flex space-x-1">
-                        <div className="w-4 h-3 bg-gray-200 rounded-sm"></div>
-                        <div className="w-4 h-3 bg-gray-400 rounded-sm"></div>
-                     </div>
-                  </div>
-
-                  {/* Item 2 */}
-                  <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
-                     <div className="flex justify-between items-start mb-3">
-                        <div className="w-8 h-8 rounded bg-red-50 flex items-center justify-center text-red-600">
-                           <AlertTriangle className="w-4 h-4" />
-                        </div>
-                        <span className="bg-red-50 text-red-800 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">Contradiction</span>
-                     </div>
-                     <h4 className="font-bold text-gray-900 text-sm mb-2">Original source photo was manipulated; metadata shows 2018 timestamp.</h4>
-                     <p className="text-xs text-gray-500 mb-4">Source: Forensic Image Lab</p>
-                     <div className="w-full bg-gray-100 h-1.5 rounded flex">
-                        <div className="bg-red-600 h-full w-[85%] rounded"></div>
-                     </div>
-                  </div>
-
-                  {/* Item 3 */}
-                  <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                     <div className="flex justify-between items-start mb-3">
-                        <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-600">
-                           <LinkIcon className="w-4 h-4" />
-                        </div>
-                        <span className="bg-gray-100 text-gray-600 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">Source Link</span>
-                     </div>
-                     <h4 className="font-bold text-gray-900 text-sm mb-2">Tracing lead back to primary government document release.</h4>
-                     <p className="text-xs text-gray-500 mb-3">Analysis: Structural Link Matching</p>
-                     <div className="flex space-x-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
-                     </div>
-                  </div>
-               </div>
             </div>
          </div>
       )}
