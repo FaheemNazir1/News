@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Search, Upload, ShieldAlert, Globe, ServerCrash, Scan, BarChart2, Hash, FileSpreadsheet, AlertTriangle, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Upload, ShieldAlert, Globe, ServerCrash, Scan, BarChart2, Hash, FileSpreadsheet, AlertTriangle, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
 
 interface Props {
   onAnalyze: (url: string) => void;
@@ -13,6 +13,7 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
   const [url, setUrl] = useState('');
 
   const [analyzed, setAnalyzed] = useState(false);
+  const [isSpeakingSummary, setIsSpeakingSummary] = useState(false);
 
   const analyzedUrl = lastAnalyzedUrl || url;
   const hostname = useMemo(() => {
@@ -36,6 +37,43 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
   const analyzedVerdict = typeof verifyResult?.verdict === 'string' ? verifyResult.verdict : '';
   const analyzedConfidence = typeof verifyResult?.confidence === 'string' ? verifyResult.confidence : '';
   const analyzedReason = Array.isArray(verifyResult?.reason) ? verifyResult.reason : null;
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeakingSummary(false);
+  }, [analyzedUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const speakVerificationSummary = () => {
+    if (!analyzedSummary || !analyzedSummary.length) return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel();
+    const text = analyzedSummary.slice(0, 4).join('. ');
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    utterance.onend = () => setIsSpeakingSummary(false);
+    utterance.onerror = () => setIsSpeakingSummary(false);
+    setIsSpeakingSummary(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopVerificationSummary = () => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    setIsSpeakingSummary(false);
+  };
 
   const isBbc = useMemo(() => {
     if (typeof verifyResult?.isBbc === 'boolean') return verifyResult.isBbc;
@@ -137,7 +175,27 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
 
                 {analyzedSummary && analyzedSummary.length ? (
                   <div className="mt-4">
-                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Summary</div>
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Summary</div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={speakVerificationSummary}
+                          disabled={!analyzedSummary.length || isSpeakingSummary}
+                          className="text-xs font-bold text-forensic-blue hover:text-forensic-dark transition-colors disabled:opacity-50"
+                        >
+                          Play
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopVerificationSummary}
+                          disabled={!isSpeakingSummary}
+                          className="text-xs font-bold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
+                        >
+                          Stop
+                        </button>
+                      </div>
+                    </div>
                     <div className="space-y-2">
                       {analyzedSummary.slice(0, 4).map((s: string, idx: number) => (
                         <div key={idx} className="text-sm text-gray-700 leading-relaxed">- {s}</div>

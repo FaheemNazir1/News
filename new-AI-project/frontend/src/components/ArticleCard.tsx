@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Article } from '../types';
 import FakeNewsBadge from './FakeNewsBadge';
 import { articleService } from '../services/api';
@@ -15,6 +15,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
     title: string;
     summary: string[];
   } | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
@@ -27,6 +28,36 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleSpeakSummary = () => {
+    if (!aiSummary?.summary?.length) return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel();
+    const text = aiSummary.summary.join('. ');
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleStopSpeaking = () => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -48,6 +79,13 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
   const handleToggleSummary = async () => {
     const next = !showSummary;
     setShowSummary(next);
+
+    if (!next) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsSpeaking(false);
+    }
 
     if (!next) return;
     if (aiSummary) return;
@@ -116,7 +154,27 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
         </button>
         {showSummary && (
           <div className="mt-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Summary</div>
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">Summary</div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSpeakSummary}
+                  disabled={summaryLoading || !!summaryError || !aiSummary?.summary?.length || isSpeaking}
+                  className="text-xs font-bold text-forensic-blue hover:text-forensic-dark transition-colors disabled:opacity-50"
+                >
+                  Play
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStopSpeaking}
+                  disabled={!isSpeaking}
+                  className="text-xs font-bold text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
+                >
+                  Stop
+                </button>
+              </div>
+            </div>
             {summaryLoading ? (
               <div className="text-sm text-gray-700 leading-relaxed">Generating summary…</div>
             ) : summaryError ? (

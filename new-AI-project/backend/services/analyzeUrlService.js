@@ -32,6 +32,46 @@ const extractMetaTitle = (html) => {
   return '';
 };
 
+const extractMetaDescription = (html) => {
+  if (!html) return '';
+  const og = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([\s\S]*?)["'][^>]*>/i);
+  if (og) return stripHtml(og[1]);
+  const desc = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([\s\S]*?)["'][^>]*>/i);
+  if (desc) return stripHtml(desc[1]);
+  return '';
+};
+
+const extractJsonLdArticleBody = (html) => {
+  if (!html) return '';
+  const scripts = [];
+  const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const raw = (m[1] || '').trim();
+    if (raw) scripts.push(raw);
+  }
+  for (const raw of scripts) {
+    const candidate = raw
+      .replace(/\u0000/g, '')
+      .replace(/\n/g, ' ')
+      .trim();
+    try {
+      const parsed = JSON.parse(candidate);
+      const stack = Array.isArray(parsed) ? parsed : [parsed];
+      for (const obj of stack) {
+        if (!obj) continue;
+        const body = obj.articleBody || obj?.mainEntityOfPage?.articleBody;
+        if (typeof body === 'string' && body.trim().length > 200) {
+          return body.trim();
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+  return '';
+};
+
 const extractContentSectionHtml = (html, hostname) => {
   if (!html) return '';
   const host = (hostname || '').toLowerCase();
@@ -284,16 +324,25 @@ const analyzeUrl = async (url) => {
   const response = await axios.get(url, {
     timeout: 12000,
     headers: {
-      'User-Agent': 'VeriNewsBot/1.0'
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9'
     }
   });
 
   const html = response.data;
   const extractedTitle = extractMetaTitle(html) || extractTitle(html);
+  const jsonLdBody = extractJsonLdArticleBody(html);
   const sectionHtml = extractContentSectionHtml(html, hostname);
-  const mainText = extractParagraphText(sectionHtml);
+  const mainText = jsonLdBody || extractParagraphText(sectionHtml);
 
-  const limited = limitWords(mainText, 2000);
+  const metaDesc = extractMetaDescription(html);
+  const combined = metaDesc && mainText && !mainText.toLowerCase().includes(metaDesc.toLowerCase())
+    ? `${metaDesc}\n${mainText}`
+    : (mainText || metaDesc);
+
+  const limited = limitWords(combined, 2000);
 
   const content = limited;
   if (!content || content.length < 80) {
