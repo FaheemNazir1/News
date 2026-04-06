@@ -14,6 +14,84 @@ const splitSentences = (text) => {
 
 const clampList = (arr, n) => arr.slice(0, n);
 
+const stripHtml = (html) => {
+  if (!html) return '';
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const extractMetaDescription = (html) => {
+  if (!html) return '';
+  const og = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([\s\S]*?)["'][^>]*>/i);
+  if (og) return stripHtml(og[1]);
+  const desc = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([\s\S]*?)["'][^>]*>/i);
+  if (desc) return stripHtml(desc[1]);
+  return '';
+};
+
+const extractJsonLdArticleBody = (html) => {
+  if (!html) return '';
+  const scripts = [];
+  const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const raw = (m[1] || '').trim();
+    if (raw) scripts.push(raw);
+  }
+  for (const raw of scripts) {
+    const candidate = raw.replace(/\u0000/g, '').replace(/\n/g, ' ').trim();
+    try {
+      const parsed = JSON.parse(candidate);
+      const stack = Array.isArray(parsed) ? parsed : [parsed];
+      for (const obj of stack) {
+        if (!obj) continue;
+        const body = obj.articleBody || obj?.mainEntityOfPage?.articleBody;
+        if (typeof body === 'string' && body.trim().length > 200) {
+          return body.trim();
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+  return '';
+};
+
+const extractContentSectionHtml = (html) => {
+  if (!html) return '';
+  const article = html.match(/<article\b[\s\S]*?<\/article>/i);
+  if (article) return article[0];
+  const main = html.match(/<main\b[\s\S]*?<\/main>/i);
+  if (main) return main[0];
+  return html;
+};
+
+const extractParagraphText = (html) => {
+  if (!html) return '';
+  const paras = [];
+  const re = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const t = stripHtml(m[1]);
+    if (t && t.length > 40) paras.push(t);
+  }
+  return paras.length ? paras.join('\n') : stripHtml(html);
+};
+
+const limitWords = (text, maxWords = 1800) => {
+  const words = (text || '').toString().replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  if (words.length <= maxWords) return words.join(' ');
+  return words.slice(0, maxWords).join(' ');
+};
+
 const fallbackSummarize = (article) => {
   const text = cleanText(article);
   const sentences = splitSentences(text);
@@ -138,6 +216,36 @@ const summarizeArticle = async (article) => {
   return fallback;
 };
 
+const summarizeUrl = async (url) => {
+  const resp = await axios.get(url, {
+    timeout: 15000,
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9'
+    }
+  });
+
+  const html = resp?.data;
+  const jsonLdBody = extractJsonLdArticleBody(html);
+  const sectionHtml = extractContentSectionHtml(html);
+  const mainText = jsonLdBody || extractParagraphText(sectionHtml);
+  const metaDesc = extractMetaDescription(html);
+
+  const combined = metaDesc && mainText && !mainText.toLowerCase().includes(metaDesc.toLowerCase())
+    ? `${metaDesc}\n${mainText}`
+    : (mainText || metaDesc);
+
+  const content = limitWords(combined, 1800);
+  if (!content || content.length < 80) {
+    return fallbackSummarize(metaDesc || '');
+  }
+
+  return summarizeArticle(content);
+};
+
 module.exports = {
-  summarizeArticle
+  summarizeArticle,
+  summarizeUrl
 };

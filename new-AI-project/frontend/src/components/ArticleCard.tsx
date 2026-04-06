@@ -43,7 +43,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
     window.speechSynthesis.cancel();
-    const text = aiSummary.summary.join('. ');
+    const text = aiSummary.summary.join(' ');
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1;
     utterance.pitch = 1;
@@ -97,11 +97,21 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
     setSummaryLoading(true);
     setSummaryError(null);
     try {
-      const result = await articleService.summarizeArticle(summarizeInput);
-      setAiSummary(result);
+      if (article.url && /^https?:\/\//i.test(article.url)) {
+        const result = await articleService.summarizeUrl(article.url);
+        setAiSummary(result);
+      } else {
+        const result = await articleService.summarizeArticle(summarizeInput);
+        setAiSummary(result);
+      }
     } catch (e: any) {
-      const msg = e?.response?.data?.error || e?.message || 'Summarization failed';
-      setSummaryError(msg);
+      try {
+        const fallback = await articleService.summarizeArticle(summarizeInput);
+        setAiSummary(fallback);
+      } catch (inner: any) {
+        const msg = inner?.response?.data?.error || e?.response?.data?.error || inner?.message || e?.message || 'Summarization failed';
+        setSummaryError(msg);
+      }
     } finally {
       setSummaryLoading(false);
     }
@@ -182,11 +192,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
             ) : aiSummary ? (
               <div className="text-sm text-gray-700 leading-relaxed">
                 {Array.isArray(aiSummary.summary) && aiSummary.summary.length ? (
-                  <ul className="list-disc ml-5 space-y-1">
-                    {aiSummary.summary.map((s, idx) => (
-                      <li key={idx}>{s}</li>
-                    ))}
-                  </ul>
+                  <div>{aiSummary.summary.join(' ')}</div>
                 ) : (
                   <div>No summary available</div>
                 )}

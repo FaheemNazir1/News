@@ -134,4 +134,17 @@ export const articleService = {
       throw error;
     }
   },
+
+  summarizeUrl: async (url: string): Promise<{
+    title: string;
+    summary: string[];
+  }> => {
+    try {
+      const response = await api.post('/summarize', { url });
+      return response.data;
+    } catch (error) {
+      console.error('Summarize URL Error:', error);
+      throw error;
+    }
+  },
 };

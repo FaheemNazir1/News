@@ -58,7 +58,7 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
     window.speechSynthesis.cancel();
-    const text = analyzedSummary.slice(0, 4).join('. ');
+    const text = analyzedSummary.slice(0, 4).join(' ');
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1;
     utterance.pitch = 1;
@@ -196,11 +196,7 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
                         </button>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      {analyzedSummary.slice(0, 4).map((s: string, idx: number) => (
-                        <div key={idx} className="text-sm text-gray-700 leading-relaxed">- {s}</div>
-                      ))}
-                    </div>
+                    <div className="text-sm text-gray-700 leading-relaxed">{analyzedSummary.slice(0, 4).join(' ')}</div>
                   </div>
                 ) : null}
 
