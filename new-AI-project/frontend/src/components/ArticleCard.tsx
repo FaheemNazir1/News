@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Article } from '../types';
 import FakeNewsBadge from './FakeNewsBadge';
+import { articleService } from '../services/api';
 
 interface ArticleCardProps {
   article: Article;
@@ -8,6 +9,12 @@ interface ArticleCardProps {
 
 const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
   const [showSummary, setShowSummary] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState<{
+    title: string;
+    summary: string[];
+  } | null>(null);
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
@@ -32,16 +39,35 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
     });
   };
 
-  const summary = useMemo(() => {
+  const summarizeInput = useMemo(() => {
     const raw = (article.content || '').replace(/\s+/g, ' ').trim();
-    const base = raw && raw !== 'No content available' ? raw : (article.title || '').trim();
-    if (!base) return '';
-
-    const sentences = base.split(/(?<=[.!?])\s+/).filter(Boolean);
-    const picked = sentences.slice(0, 2).join(' ');
-    const trimmed = picked.length > 260 ? picked.slice(0, 257).trimEnd() + '…' : picked;
-    return trimmed;
+    if (raw && raw !== 'No content available') return raw;
+    return (article.title || '').trim();
   }, [article.content, article.title]);
+
+  const handleToggleSummary = async () => {
+    const next = !showSummary;
+    setShowSummary(next);
+
+    if (!next) return;
+    if (aiSummary) return;
+    if (!summarizeInput) {
+      setSummaryError('No text available to summarize');
+      return;
+    }
+
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      const result = await articleService.summarizeArticle(summarizeInput);
+      setAiSummary(result);
+    } catch (e: any) {
+      const msg = e?.response?.data?.error || e?.message || 'Summarization failed';
+      setSummaryError(msg);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
@@ -83,7 +109,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
       <div className="mb-4">
         <button
           type="button"
-          onClick={() => setShowSummary((v) => !v)}
+          onClick={handleToggleSummary}
           className="text-sm font-bold text-forensic-blue hover:text-forensic-dark transition-colors"
         >
           {showSummary ? 'Hide summary' : 'Summarize'}
@@ -91,7 +117,25 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
         {showSummary && (
           <div className="mt-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
             <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Summary</div>
-            <div className="text-sm text-gray-700 leading-relaxed">{summary || 'No summary available'}</div>
+            {summaryLoading ? (
+              <div className="text-sm text-gray-700 leading-relaxed">Generating summary…</div>
+            ) : summaryError ? (
+              <div className="text-sm text-red-700 leading-relaxed">{summaryError}</div>
+            ) : aiSummary ? (
+              <div className="text-sm text-gray-700 leading-relaxed">
+                {Array.isArray(aiSummary.summary) && aiSummary.summary.length ? (
+                  <ul className="list-disc ml-5 space-y-1">
+                    {aiSummary.summary.map((s, idx) => (
+                      <li key={idx}>{s}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div>No summary available</div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-700 leading-relaxed">No summary available</div>
+            )}
           </div>
         )}
       </div>

@@ -7,6 +7,10 @@ interface FakeNewsBadgeProps {
 }
 
 const FakeNewsBadge: React.FC<FakeNewsBadgeProps> = ({ article, showDetails = false }) => {
+  const fakeScoreSafe = typeof article.fakeScore === 'number' ? article.fakeScore : 0;
+  const credibilitySafe = typeof article.credibilityScore === 'number' ? article.credibilityScore : Math.max(0, 100 - fakeScoreSafe);
+  const fakeReasonsSafe = Array.isArray(article.fakeReasons) ? article.fakeReasons : [];
+
   const getFakeNewsColor = (fakeScore: number) => {
     if (fakeScore >= 40) return 'bg-red-500';
     if (fakeScore >= 30) return 'bg-orange-500';
@@ -42,22 +46,22 @@ const FakeNewsBadge: React.FC<FakeNewsBadgeProps> = ({ article, showDetails = fa
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <span className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${getFakeNewsColor(article.fakeScore)}`}>
-          {getFakeNewsText(article.fakeScore)}
+        <span className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${getFakeNewsColor(fakeScoreSafe)}`}>
+          {getFakeNewsText(fakeScoreSafe)}
         </span>
         <span className="text-xs text-gray-500">
-          Score: {article.fakeScore}/100
+          Score: {fakeScoreSafe}/100
         </span>
-        <span className={`text-xs font-medium ${getCredibilityColor(article.credibilityScore)}`}>
-          Credibility: {article.credibilityScore}%
+        <span className={`text-xs font-medium ${getCredibilityColor(credibilitySafe)}`}>
+          Credibility: {credibilitySafe}%
         </span>
       </div>
       
-      {showDetails && article.fakeReasons.length > 0 && (
+      {showDetails && fakeReasonsSafe.length > 0 && (
         <div className="text-xs text-gray-600">
           <div className="font-medium mb-1">Detection Reasons:</div>
           <div className="flex flex-wrap gap-1">
-            {article.fakeReasons.map((reason, index) => (
+            {fakeReasonsSafe.map((reason, index) => (
               <span 
                 key={index}
                 className="px-2 py-1 bg-gray-100 rounded text-gray-700"

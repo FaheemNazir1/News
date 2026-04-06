@@ -29,6 +29,14 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
   const verifiedHostname = typeof verifyResult?.hostname === 'string' ? verifyResult.hostname : '';
   const effectiveHostname = verifiedHostname || hostname;
 
+  const analyzedSource = typeof verifyResult?.source === 'string' ? verifyResult.source : '';
+  const analyzedTitle = typeof verifyResult?.title === 'string' ? verifyResult.title : '';
+  const analyzedSummary = Array.isArray(verifyResult?.summary) ? verifyResult.summary : null;
+  const analyzedSentiment = typeof verifyResult?.sentiment === 'string' ? verifyResult.sentiment : '';
+  const analyzedVerdict = typeof verifyResult?.verdict === 'string' ? verifyResult.verdict : '';
+  const analyzedConfidence = typeof verifyResult?.confidence === 'string' ? verifyResult.confidence : '';
+  const analyzedReason = Array.isArray(verifyResult?.reason) ? verifyResult.reason : null;
+
   const isBbc = useMemo(() => {
     if (typeof verifyResult?.isBbc === 'boolean') return verifyResult.isBbc;
     return hostname.toLowerCase().includes('bbc');
@@ -99,13 +107,57 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
               <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Analyzed link</div>
               <div className="text-sm font-semibold text-gray-900 break-words">{analyzedUrl}</div>
               {verifyResult ? (
-                <div className="text-xs text-gray-500 mt-1">Source: {effectiveHostname || 'Unknown'}</div>
+                <div className="text-xs text-gray-500 mt-1">Source: {analyzedSource || effectiveHostname || 'Unknown'}</div>
               ) : (
                 <div className="text-xs text-gray-500 mt-1">
                   Note: This screen currently shows demo-style results. To generate unique results per link, we need to connect it to a backend analysis endpoint.
                 </div>
               )}
             </div>
+
+            {verifyResult && (analyzedTitle || analyzedSummary || analyzedVerdict) ? (
+              <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+                {analyzedTitle ? (
+                  <div className="text-lg font-extrabold text-gray-900 leading-snug">{analyzedTitle}</div>
+                ) : null}
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="rounded-xl border border-gray-200 p-3">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sentiment</div>
+                    <div className="mt-1 text-sm font-semibold text-gray-900">{analyzedSentiment || '—'}</div>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 p-3">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Verdict</div>
+                    <div className="mt-1 text-sm font-semibold text-gray-900">{analyzedVerdict || '—'}</div>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 p-3">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Confidence</div>
+                    <div className="mt-1 text-sm font-semibold text-gray-900">{analyzedConfidence || '—'}</div>
+                  </div>
+                </div>
+
+                {analyzedSummary && analyzedSummary.length ? (
+                  <div className="mt-4">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Summary</div>
+                    <div className="space-y-2">
+                      {analyzedSummary.slice(0, 4).map((s: string, idx: number) => (
+                        <div key={idx} className="text-sm text-gray-700 leading-relaxed">- {s}</div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {analyzedReason && analyzedReason.length ? (
+                  <div className="mt-4">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Reason</div>
+                    <div className="space-y-2">
+                      {analyzedReason.slice(0, 4).map((r: string, idx: number) => (
+                        <div key={idx} className="text-sm text-gray-700 leading-relaxed">- {r}</div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             {verifyResult ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

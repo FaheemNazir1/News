@@ -61,13 +61,15 @@ router.get("/", async (req, res) => {
 router.post("/fetch", async (req, res) => {
   try {
     const apiKey = process.env.NEWS_API_KEY;
+    const worldApiKey = process.env.WORLDNEWS_API_KEY;
+    const keyword = typeof req.body?.keyword === 'string' ? req.body.keyword.trim() : '';
 
-    if (!apiKey) {
-      return res.status(400).json({ error: "Missing News API key" });
+    if (!apiKey && !worldApiKey) {
+      return res.status(400).json({ error: "Missing news API keys" });
     }
 
     // 👉 multi-source aggregation
-    const newsData = await aggregateNews(apiKey);
+    const newsData = await aggregateNews(apiKey, worldApiKey, keyword);
     const newsArticles = newsData.articles; // Extract just the articles array
 
     // 👉 bulk insert (fast + skips duplicates)
@@ -89,7 +91,8 @@ router.post("/fetch", async (req, res) => {
 // ⚡ LIVE FETCH (without saving)
 router.get("/live", async (req, res) => {
   try {
-    const news = await aggregateNews(process.env.NEWS_API_KEY);
+    const keyword = typeof req.query?.keyword === 'string' ? req.query.keyword.trim() : '';
+    const news = await aggregateNews(process.env.NEWS_API_KEY, process.env.WORLDNEWS_API_KEY, keyword);
     res.json(news);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Article, ArticlesResponse, SentimentStats, FakeNewsStats } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5005/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -37,7 +37,7 @@ export const articleService = {
   getLiveNews: async (q?: string): Promise<{ keyword?: string; articles: Article[] }> => {
     try {
       const response = await api.get('/articles/live', {
-        params: q ? { q } : undefined
+        params: q ? { keyword: q } : undefined
       });
       return response.data;
     } catch (error) {
@@ -100,6 +100,37 @@ export const articleService = {
       return response.data;
     } catch (error) {
       console.error('Verify Link Error:', error);
+      throw error;
+    }
+  },
+
+  analyzeUrl: async (url: string): Promise<{
+    source: string;
+    title: string;
+    summary: string[];
+    sentiment: string;
+    verdict: string;
+    confidence: string;
+    reason: string[];
+  }> => {
+    try {
+      const response = await api.post('/analyze-url', { url });
+      return response.data;
+    } catch (error) {
+      console.error('Analyze URL Error:', error);
+      throw error;
+    }
+  },
+
+  summarizeArticle: async (article: string): Promise<{
+    title: string;
+    summary: string[];
+  }> => {
+    try {
+      const response = await api.post('/summarize', { article });
+      return response.data;
+    } catch (error) {
+      console.error('Summarize Error:', error);
       throw error;
     }
   },

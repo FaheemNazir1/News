@@ -45,7 +45,7 @@ function App() {
       setLoading(true);
       setVerifyError(null);
       setLastAnalyzedUrl(url);
-      const result = await articleService.verifyLink(url);
+      const result = await articleService.analyzeUrl(url);
       setVerifyResult(result);
     } catch (err: any) {
       setVerifyResult(null);

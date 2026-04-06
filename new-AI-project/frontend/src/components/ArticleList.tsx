@@ -54,8 +54,8 @@ const ArticleList: React.FC<ArticleListProps> = ({ articles, loading, error }) =
   return (
     <div className="p-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {articles.map(article => (
-          <ArticleCard key={article._id} article={article} />
+        {articles.map((article) => (
+          <ArticleCard key={article._id || article.url || article.title} article={article} />
         ))}
       </div>
     </div>

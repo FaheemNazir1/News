@@ -10,8 +10,8 @@ const LiveNewsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [keyword, setKeyword] = useState('news');
-  const [activeKeyword, setActiveKeyword] = useState('news');
+  const [keyword, setKeyword] = useState('');
+  const [activeKeyword, setActiveKeyword] = useState('');
 
   const fetchLiveNews = useCallback(async (q?: string) => {
     try {
@@ -20,7 +20,7 @@ const LiveNewsPage: React.FC = () => {
 
       const response = await articleService.getLiveNews(q);
       setArticles(response.articles || []);
-      setActiveKeyword((response.keyword || q || 'news').toString());
+      setActiveKeyword((response.keyword || q || '').toString());
       setLastUpdated(new Date().toLocaleTimeString());
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.message || 'Failed to fetch live news');
@@ -36,7 +36,7 @@ const LiveNewsPage: React.FC = () => {
   useEffect(() => {
     const q = keyword.trim();
     const timer = setTimeout(() => {
-      const next = q ? q : 'news';
+      const next = q ? q : '';
       if (next !== activeKeyword) {
         setActiveKeyword(next);
       }
@@ -47,15 +47,15 @@ const LiveNewsPage: React.FC = () => {
 
   const handleSearch = () => {
     const q = keyword.trim();
-    const next = q ? q : 'news';
+    const next = q ? q : '';
     setActiveKeyword(next);
     fetchLiveNews(next);
   };
 
   const handleClear = () => {
-    setKeyword('news');
-    setActiveKeyword('news');
-    fetchLiveNews('news');
+    setKeyword('');
+    setActiveKeyword('');
+    fetchLiveNews('');
   };
 
   return (
@@ -69,7 +69,7 @@ const LiveNewsPage: React.FC = () => {
             {lastUpdated ? ` • Last updated: ${lastUpdated}` : ''}
           </div>
           <div className="text-sm text-gray-500 mt-1">
-            Keyword: <span className="font-semibold text-gray-700">{activeKeyword}</span>
+            Keyword: <span className="font-semibold text-gray-700">{activeKeyword ? activeKeyword : 'Latest'}</span>
           </div>
         </div>
 

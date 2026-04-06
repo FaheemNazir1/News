@@ -3,18 +3,29 @@
 const axios = require('axios');
 const { analyzeSentiment } = require('../sentimentService');
 
-const fetchNewsAPI = async (apiKey, category = 'general', country = 'us') => {
+const fetchNewsAPI = async (apiKey, keyword = '') => {
   try {
-   
-    const response = await axios.get("https://newsapi.org/v2/everything", {
-  params: {
-    q: "news",              // keyword
-    sortBy: "publishedAt",  // latest first
-    language: "en",
-    apiKey,
-    pageSize: 20
-  }
-});
+    if (!apiKey) {
+      return [];
+    }
+    const q = (keyword || '').toString().trim();
+
+    const endpoint = q ? 'https://newsapi.org/v2/everything' : 'https://newsapi.org/v2/top-headlines';
+    const params = q
+      ? {
+          q,
+          sortBy: 'publishedAt',
+          language: 'en',
+          apiKey,
+          pageSize: 20
+        }
+      : {
+          country: 'us',
+          apiKey,
+          pageSize: 20
+        };
+
+    const response = await axios.get(endpoint, { params });
 
     return response.data.articles.map(article => {
       const sentimentAnalysis = analyzeSentiment(

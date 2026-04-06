@@ -1,17 +1,26 @@
 const fetchNewsAPI = require('./sources/newsApi');
+const fetchWorldNewsAPI = require('./sources/worldNewsApi');
 const fetchRSS = require('./sources/rssSource');
 const { analyzeFakeNewsPatterns } = require('./fakeNewsService');
 
 const normalizeTitle = (title) =>
   title?.toLowerCase().replace(/[^\w\s]/gi, '').trim();
 
-const aggregateNews = async (apiKey) => {
-  const [apiNews, rssNews] = await Promise.all([
-    fetchNewsAPI(apiKey),
+const matchesKeyword = (article, keyword) => {
+  const k = (keyword || '').toString().trim().toLowerCase();
+  if (!k) return true;
+  const hay = `${article?.title || ''} ${article?.content || ''} ${article?.source || ''}`.toLowerCase();
+  return hay.includes(k);
+};
+
+const aggregateNews = async (newsApiKey, worldNewsApiKey, keyword = '') => {
+  const [apiNews, worldNews, rssNews] = await Promise.all([
+    newsApiKey ? fetchNewsAPI(newsApiKey, keyword) : Promise.resolve([]),
+    worldNewsApiKey ? fetchWorldNewsAPI(worldNewsApiKey, keyword) : Promise.resolve([]),
     fetchRSS()
   ]);
 
-  const allNews = [...apiNews, ...rssNews];
+  const allNews = [...apiNews, ...worldNews, ...rssNews].filter((a) => matchesKeyword(a, keyword));
 
   const seen = new Set();
   const uniqueNews = [];
@@ -30,9 +39,11 @@ const aggregateNews = async (apiKey) => {
 
   console.log({
     api: apiNews.length,
+    world: worldNews.length,
     rss: rssNews.length,
     total: allNews.length,
     unique: uniqueNews.length,
+
     fakeAnalysis: {
       fake: fakeNewsAnalysis.fake,
       likelyFake: fakeNewsAnalysis.likelyFake,
@@ -48,9 +59,3 @@ const aggregateNews = async (apiKey) => {
 };
 
 module.exports = aggregateNews;
-
-// TEMP TEST CALL
-aggregateNews( process.env.NEWS_API_KEY).then(res => {
-  console.log("Sample output:", res.articles.slice(0, 2));
-  console.log("Fake news analysis:", res.fakeNewsAnalysis);
-});
