@@ -37,6 +37,16 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
   const analyzedVerdict = typeof verifyResult?.verdict === 'string' ? verifyResult.verdict : '';
   const analyzedConfidence = typeof verifyResult?.confidence === 'string' ? verifyResult.confidence : '';
   const analyzedReason = Array.isArray(verifyResult?.reason) ? verifyResult.reason : null;
+  const analyzedReasons = Array.isArray(verifyResult?.reasons) ? verifyResult.reasons : null;
+  const credibilityLevel = typeof verifyResult?.credibilityLevel === 'string' ? verifyResult.credibilityLevel : '';
+
+  const credibilityBadge = (() => {
+    const level = (credibilityLevel || '').toLowerCase();
+    if (level === 'trusted') return { text: 'Trusted', cls: 'bg-green-100 text-green-800' };
+    if (level === 'medium') return { text: 'Medium', cls: 'bg-yellow-100 text-yellow-800' };
+    if (level) return { text: level, cls: 'bg-red-100 text-red-800' };
+    return { text: 'Unknown', cls: 'bg-red-100 text-red-800' };
+  })();
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -89,6 +99,12 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
   const factColor = trustScore >= 80 ? 'text-green-600' : trustScore >= 60 ? 'text-blue-600' : 'text-red-600';
   const sourceColor = trustScore >= 80 ? 'text-green-600' : trustScore >= 60 ? 'text-blue-600' : 'text-red-600';
 
+  const trustBar = (() => {
+    if (trustScore >= 70) return { cls: 'bg-green-500', track: 'bg-green-100' };
+    if (trustScore >= 30) return { cls: 'bg-yellow-500', track: 'bg-yellow-100' };
+    return { cls: 'bg-red-500', track: 'bg-red-100' };
+  })();
+
   const handleAnalyze = () => {
     if (url) {
       onAnalyze(url);
@@ -130,7 +146,10 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
               <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Analyzed link</div>
               <div className="text-sm font-semibold text-gray-900 break-words">{analyzedUrl}</div>
               {verifyResult ? (
-                <div className="text-xs text-gray-500 mt-1">Source: {analyzedSource || effectiveHostname || 'Unknown'}</div>
+                <div className="flex items-center justify-between mt-2 gap-3">
+                  <div className="text-xs text-gray-500">Source: {analyzedSource || effectiveHostname || 'Unknown'}</div>
+                  <span className={`${credibilityBadge.cls} text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider`}>{credibilityBadge.text}</span>
+                </div>
               ) : (
                 <div className="text-xs text-gray-500 mt-1">
                   Note: This screen currently shows demo-style results. To generate unique results per link, we need to connect it to a backend analysis endpoint.
@@ -155,6 +174,16 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
                   <div className="rounded-xl border border-gray-200 p-3">
                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Confidence</div>
                     <div className="mt-1 text-sm font-semibold text-gray-900">{analyzedConfidence || '—'}</div>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Trust Score</div>
+                    <div className="text-xs font-extrabold text-gray-900">{Math.max(0, Math.min(100, trustScore))}/100</div>
+                  </div>
+                  <div className={`w-full h-2 rounded-full ${trustBar.track} overflow-hidden`}>
+                    <div className={`h-full ${trustBar.cls}`} style={{ width: `${Math.max(0, Math.min(100, trustScore))}%` }} />
                   </div>
                 </div>
 
@@ -185,11 +214,11 @@ const IntelligenceDashboard: React.FC<Props> = ({ onAnalyze, isLoading, lastAnal
                   </div>
                 ) : null}
 
-                {analyzedReason && analyzedReason.length ? (
+                {(analyzedReasons && analyzedReasons.length) || (analyzedReason && analyzedReason.length) ? (
                   <div className="mt-4">
                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Reason</div>
                     <div className="space-y-2">
-                      {analyzedReason.slice(0, 4).map((r: string, idx: number) => (
+                      {(analyzedReasons || analyzedReason || []).slice(0, 4).map((r: string, idx: number) => (
                         <div key={idx} className="text-sm text-gray-700 leading-relaxed">- {r}</div>
                       ))}
                     </div>

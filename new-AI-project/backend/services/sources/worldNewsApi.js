@@ -42,6 +42,7 @@ const fetchWorldNewsAPI = async (apiKey, keyword = '') => {
       const title = item.title || '';
       const content = item.summary || item.text || 'No content available';
       const url = item.url || item.link || '';
+      const author = item.author || item.authors || '';
 
       const sentimentAnalysis = analyzeSentiment(`${title} ${content}`);
 
@@ -50,9 +51,11 @@ const fetchWorldNewsAPI = async (apiKey, keyword = '') => {
         content,
         source: item.source_country || item.source || 'WorldNewsAPI',
         url,
+        author: typeof author === 'string' ? author : '',
         sentiment: sentimentAnalysis.sentiment,
         score: sentimentAnalysis.score,
-        publishedAt: item.publish_date ? new Date(item.publish_date) : new Date()
+        publishedAt: item.publish_date ? new Date(item.publish_date) : new Date(),
+        publishDate: item.publish_date ? new Date(item.publish_date).toISOString() : ''
       };
     });
   } catch (error) {

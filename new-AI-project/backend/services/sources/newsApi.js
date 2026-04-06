@@ -37,9 +37,11 @@ const fetchNewsAPI = async (apiKey, keyword = '') => {
         content: article.description || article.content || 'No content available',
         source: article.source.name || "NewsAPI",
         url: article.url,
+        author: article.author || '',
         sentiment: sentimentAnalysis.sentiment,
         score: sentimentAnalysis.score,
-        publishedAt: new Date(article.publishedAt)
+        publishedAt: new Date(article.publishedAt),
+        publishDate: article.publishedAt ? new Date(article.publishedAt).toISOString() : ''
       };
     });
 

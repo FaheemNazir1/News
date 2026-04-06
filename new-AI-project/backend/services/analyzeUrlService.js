@@ -165,6 +165,19 @@ const sourceNameFromHostname = (hostname) => {
   return core.charAt(0).toUpperCase() + core.slice(1);
 };
 
+const credibilityLevelFromHostname = (hostname) => {
+  const h = (hostname || '').toLowerCase();
+  if (!h) return 'Unknown';
+
+  const trusted = ['bbc.', 'reuters.', 'apnews.', 'theguardian.', 'nytimes.', 'aljazeera.', 'washingtonpost.', 'wsj.', 'bloomberg.', 'ft.com', 'economist.'];
+  if (trusted.some((t) => h.includes(t))) return 'Trusted';
+
+  const medium = ['indiatimes', 'timesofindia', 'ndtv', 'dawn', 'geo', 'arynews', 'thehindu', 'hindustantimes', 'tribune', 'cnn', 'cnbc', 'fox', 'nbc', 'abcnews'];
+  if (medium.some((m) => h.includes(m))) return 'Medium';
+
+  return 'Unknown';
+};
+
 const limitWords = (text, maxWords = 2000) => {
   const words = (text || '').toString().replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
   if (words.length <= maxWords) return words.join(' ');
@@ -306,6 +319,8 @@ const fallbackAnalyze = async ({ source, title, content }) => {
     ? fake.fakeReasons.slice(0, 4).map((r) => r.toString())
     : ['insufficient_signals'];
 
+  const trustScore = Math.max(0, Math.min(100, Math.round(fake.credibilityScore)));
+
   return {
     source,
     title: title || summarized.title || '',
@@ -313,13 +328,18 @@ const fallbackAnalyze = async ({ source, title, content }) => {
     sentiment: sentimentRes.sentiment ? sentimentRes.sentiment.charAt(0).toUpperCase() + sentimentRes.sentiment.slice(1) : 'Neutral',
     verdict,
     confidence,
-    reason
+    reason,
+    reasons: reason,
+    trustScore,
+    credibilityLevel: 'Unknown',
+    publishDate: ''
   };
 };
 
 const analyzeUrl = async (url) => {
   const hostname = safeHostnameFromUrl(url);
   const source = sourceNameFromHostname(hostname);
+  const credibilityLevel = credibilityLevelFromHostname(hostname);
 
   const response = await axios.get(url, {
     timeout: 12000,
@@ -355,10 +375,21 @@ const analyzeUrl = async (url) => {
   const llm = await llmAnalyze({ content, source }).catch(() => null);
 
   if (llm) {
-    return normalizeOutput(llm, fallback);
+    const normalized = normalizeOutput(llm, fallback);
+    return {
+      ...normalized,
+      reasons: normalized.reason,
+      trustScore: typeof fallback?.trustScore === 'number' ? fallback.trustScore : 0,
+      credibilityLevel,
+      publishDate: ''
+    };
   }
 
-  return fallback;
+  return {
+    ...fallback,
+    credibilityLevel,
+    publishDate: ''
+  };
 };
 
 module.exports = {

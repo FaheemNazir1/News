@@ -11,6 +11,13 @@ export interface Article {
   isFake: boolean;
   fakeReasons: string[];
   credibilityScore: number;
+  trustScore?: number;
+  verdict?: string;
+  confidence?: string;
+  reasons?: string[];
+  credibilityLevel?: 'Trusted' | 'Medium' | 'Unknown' | string;
+  publishDate?: string;
+  author?: string;
   publishedAt: string;
   createdAt: string;
 }
